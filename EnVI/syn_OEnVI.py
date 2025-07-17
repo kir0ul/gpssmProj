@@ -3,6 +3,7 @@ Main function for synthetic datasets (kink function datasets)
 
 OEnVI - GPSSM
 """
+
 import math
 import os
 import torch
@@ -14,16 +15,17 @@ from tqdm import tqdm
 from models.EnVI import OEnVI
 from utils import settings as cg
 from utils.plotResult import plot_1D_all
+
 cg.reset_seed(33)
 device = cg.device
 dtype = cg.dtype
 
 
-'''######################  parameters to generate the dataset from a SSM with kink dynamics  #####################'''
-func ='kinkfunc'
-process_noise_sd =  0.05
+"""######################  parameters to generate the dataset from a SSM with kink dynamics  #####################"""
+func = "kinkfunc"
+process_noise_sd = 0.05
 # observation_noise_sd_list  = [math.sqrt(0.008), math.sqrt(0.08), math.sqrt(0.8)]
-observation_noise_sd_list  = [math.sqrt(0.008)]
+observation_noise_sd_list = [math.sqrt(0.008)]
 
 for observation_noise_sd in observation_noise_sd_list:
     number_ips = 15  # number of inducing points
@@ -33,25 +35,38 @@ for observation_noise_sd in observation_noise_sd_list:
     batch_size = 1
     data_length = 1000  # number of data in the online setting
 
-    '''########################   Simulated data   ########################################'''
-    ips, state_np, observe_np = syn_data_generation(func=func, traj_len=data_length, process_noise_sd=process_noise_sd,
-                                                    observation_noise_sd=observation_noise_sd, number_ips=number_ips,
-                                                    if_plot=False)
+    """########################   Simulated data   ########################################"""
+    ips, state_np, observe_np = syn_data_generation(
+        func=func,
+        traj_len=data_length,
+        process_noise_sd=process_noise_sd,
+        observation_noise_sd=observation_noise_sd,
+        number_ips=number_ips,
+        if_plot=False,
+    )
 
     # data_length x dim_output
-    observe = torch.tensor(observe_np.reshape([data_length, dim_output]), dtype=dtype).to(device)
+    observe = torch.tensor(
+        observe_np.reshape([data_length, dim_output]), dtype=dtype
+    ).to(device)
     # data_length x dim_states
-    state = torch.tensor(state_np.reshape([data_length, dim_states]), dtype=dtype).to(device)
+    state = torch.tensor(state_np.reshape([data_length, dim_states]), dtype=dtype).to(
+        device
+    )
 
     """ # ##-------------------   OEnVI GPSSM & experiment settings -------------------## #"""
     save_fig = True  # True:  save figure
     save_model = True  # True:  save model
     fixEmission = True
     fixTransition = False
-    sample_u = True  # consistent sampling (see Ialongo'19); (False corresponds to Doerr'18)
-    num_epoch = 1  # number of epochs for the inner optimization loop (at each time step t)
+    sample_u = (
+        True  # consistent sampling (see Ialongo'19); (False corresponds to Doerr'18)
+    )
+    num_epoch = (
+        1  # number of epochs for the inner optimization loop (at each time step t)
+    )
     lr = 0.01  # learning rate
-    DIR = f'results/kinkFunc/OEnVI/fixEmission_{fixEmission}_fixTrans_{fixTransition}_eNoise_{round(observation_noise_sd ** 2, 3)}_tNoise_{round(process_noise_sd, 3)}_consistentELBO_{sample_u}/'
+    DIR = f"results/kinkFunc/OEnVI/fixEmission_{fixEmission}_fixTrans_{fixTransition}_eNoise_{round(observation_noise_sd**2, 3)}_tNoise_{round(process_noise_sd, 3)}_consistentELBO_{sample_u}/"
     if not os.path.exists(DIR):
         os.makedirs(DIR)
 
@@ -60,9 +75,17 @@ for observation_noise_sd in observation_noise_sd_list:
     H_true = torch.eye(dim_states, device=cg.device, dtype=cg.dtype)[indices]
 
     # define model
-    model = OEnVI(dim_x=dim_states, dim_y=dim_output, seq_len=1, ips=ips, dim_c=0, N_MC=100,
-                  process_noise_sd=process_noise_sd, emission_noise_sd=observation_noise_sd,
-                  consistentSampling=sample_u).to(cg.device)
+    model = OEnVI(
+        dim_x=dim_states,
+        dim_y=dim_output,
+        seq_len=1,
+        ips=ips,
+        dim_c=0,
+        N_MC=100,
+        process_noise_sd=process_noise_sd,
+        emission_noise_sd=observation_noise_sd,
+        consistentSampling=sample_u,
+    ).to(cg.device)
     model.variance_output = True
 
     # conditions
@@ -84,11 +107,12 @@ for observation_noise_sd in observation_noise_sd_list:
     MSE_fitting = []
 
     X = state[0, :]
-    x_t_1 = X.expand(model.N_MC, dim_states, batch_size, dim_states)  # shape: N_MC x state_dim x batch_size x state_dim
+    x_t_1 = X.expand(
+        model.N_MC, dim_states, batch_size, dim_states
+    )  # shape: N_MC x state_dim x batch_size x state_dim
 
-    DataIter = tqdm(range(0, data_length), desc='Data index:')
+    DataIter = tqdm(range(0, data_length), desc="Data index:")
     for ii in DataIter:
-
         true_state.append(state_np[ii])
         true_obser.append(observe_np[ii])
 
@@ -114,20 +138,36 @@ for observation_noise_sd in observation_noise_sd_list:
 
         x_t_1 = x_t.detach()
 
-        DataIter.set_postfix({'loss': '{0:1.5f}'.format(np.stack(losses).mean())})
+        DataIter.set_postfix({"loss": "{0:1.5f}".format(np.stack(losses).mean())})
 
         if ii % 50 == 0:
-            X_EnVI = torch.cat(filter_X, dim=1)  # shape: batch_size x seq_len x state_dim
-            var_EnVI = torch.stack(filter_Var).transpose(0, 1)  # shape: batch_size x seq_len x state_dim x state_dim
+            X_EnVI = torch.cat(
+                filter_X, dim=1
+            )  # shape: batch_size x seq_len x state_dim
+            var_EnVI = torch.stack(filter_Var).transpose(
+                0, 1
+            )  # shape: batch_size x seq_len x state_dim x state_dim
             # reshape
             X_EnVI = X_EnVI.reshape(-1)  # shape: (batch_size x seq_len)
-            rmse_raw = np.sqrt(np.mean(np.sum((np.stack(true_obser) - np.stack(true_state)) ** 2)))
-            rmse_EnVI = np.sqrt(np.mean(np.sum((X_EnVI.detach().cpu().numpy() - np.stack(true_state)) ** 2)))
+            rmse_raw = np.sqrt(
+                np.mean(np.sum((np.stack(true_obser) - np.stack(true_state)) ** 2))
+            )
+            rmse_EnVI = np.sqrt(
+                np.mean(
+                    np.sum((X_EnVI.detach().cpu().numpy() - np.stack(true_state)) ** 2)
+                )
+            )
             print("\n")
-            print('Baseline:', rmse_raw)
-            print('EnVI:', rmse_EnVI)
-            MSE_preTGP, LL_preGP = plot_1D_all(model=model, epoch=ii, func=func, condition_u=sample_u,
-                                               save=save_fig,  path=DIR)
+            print("Baseline:", rmse_raw)
+            print("EnVI:", rmse_EnVI)
+            MSE_preTGP, LL_preGP = plot_1D_all(
+                model=model,
+                epoch=ii,
+                func=func,
+                condition_u=sample_u,
+                save=save_fig,
+                path=DIR,
+            )
             # print(f'fitting MSE: {MSE_preTGP},   Iteration: {ii}')
             # print(f'fitting Log-likelihood: {LL_preGP},   Iteration: {ii}')
             print("_" * 80)

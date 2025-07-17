@@ -4,7 +4,9 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from high_dim_GPSSM.modules.gpModel import SparseGPModel
 from high_dim_GPSSM.utils_h import reset_seed
+
 reset_seed(0)
+
 
 def train_svgp(model, X_train, y_train, num_epochs=1000, lr=1e-3):
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -17,7 +19,7 @@ def train_svgp(model, X_train, y_train, num_epochs=1000, lr=1e-3):
         optimizer.step()
 
         if epoch % 100 == 0:
-            print(f'Epoch {epoch}, ELBO: {-loss.item():.4f}')
+            print(f"Epoch {epoch}, ELBO: {-loss.item():.4f}")
 
 
 def predict_svgp(model, X_star):
@@ -44,11 +46,15 @@ mean, var = predict_svgp(model, X_test)
 
 
 plt.figure(figsize=(10, 5))
-plt.plot(X_train.numpy(), y_train.numpy(), 'kx', label='Training Data')
-plt.plot(X_test.numpy(), mean.numpy(), 'b', label='Predictive Mean')
-plt.fill_between(X_test.numpy(),
-                 (mean - 2 * torch.sqrt(var)).numpy(),
-                 (mean + 2 * torch.sqrt(var)).numpy(),
-                 color='blue', alpha=0.2, label='Predictive Variance')
+plt.plot(X_train.numpy(), y_train.numpy(), "kx", label="Training Data")
+plt.plot(X_test.numpy(), mean.numpy(), "b", label="Predictive Mean")
+plt.fill_between(
+    X_test.numpy(),
+    (mean - 2 * torch.sqrt(var)).numpy(),
+    (mean + 2 * torch.sqrt(var)).numpy(),
+    color="blue",
+    alpha=0.2,
+    label="Predictive Variance",
+)
 plt.legend()
 plt.show()

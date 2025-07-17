@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class RealNVP(nn.Module):
     def __init__(self, nets, nett, mask):
         super(RealNVP, self).__init__()

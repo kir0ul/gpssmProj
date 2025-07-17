@@ -1,6 +1,7 @@
 import math
 import torch
 import sys
+
 directory_to_add = "/home/student2/zhidi/gpbl/PycharmProj/ETGPSSM/high_dim_GPSSM"
 if directory_to_add not in sys.path:
     # 添加目录到 sys.path
@@ -8,7 +9,8 @@ if directory_to_add not in sys.path:
 from .modules import *
 from utils_h import device, dtype
 
-def _kl_loss(mu_0, log_sigma_0, mu_1, log_sigma_1) :
+
+def _kl_loss(mu_0, log_sigma_0, mu_1, log_sigma_1):
     """
     An method for calculating KL divergence between two Normal distribtuion.
 
@@ -17,13 +19,19 @@ def _kl_loss(mu_0, log_sigma_0, mu_1, log_sigma_1) :
         log_sigma_0 (Float): log(standard deviation of normal distribution).
         mu_1 (Float): mean of normal distribution.
         log_sigma_1 (Float): log(standard deviation of normal distribution).
-   
+
     """
-    kl = log_sigma_1 - log_sigma_0 + \
-    (torch.exp(log_sigma_0)**2 + (mu_0-mu_1)**2)/(2*math.exp(log_sigma_1)**2) - 0.5
+    kl = (
+        log_sigma_1
+        - log_sigma_0
+        + (torch.exp(log_sigma_0) ** 2 + (mu_0 - mu_1) ** 2)
+        / (2 * math.exp(log_sigma_1) ** 2)
+        - 0.5
+    )
     return kl.sum()
 
-def bayesian_kl_loss(model, reduction='mean', last_layer_only=False) :
+
+def bayesian_kl_loss(model, reduction="mean", last_layer_only=False):
     """
     An method for calculating KL divergence of whole layers in the model.
 
@@ -34,42 +42,48 @@ def bayesian_kl_loss(model, reduction='mean', last_layer_only=False) :
             ``'mean'``: the sum of the output will be divided by the number of
             elements of the output.
             ``'sum'``: the output will be summed.
-        last_layer_only (Bool): True for return only the last layer's KL divergence.    
-        
+        last_layer_only (Bool): True for return only the last layer's KL divergence.
+
     """
     kl = torch.Tensor([0]).to(device)
     kl_sum = torch.Tensor([0]).to(device)
     n = torch.Tensor([0]).to(device)
 
-    for m in model.modules() :
+    for m in model.modules():
         if isinstance(m, (BayesLinear, BayesConv2d)):
-            kl = _kl_loss(m.weight_mu, m.weight_log_sigma, m.prior_mu, m.prior_log_sigma)
+            kl = _kl_loss(
+                m.weight_mu, m.weight_log_sigma, m.prior_mu, m.prior_log_sigma
+            )
             kl_sum += kl
             n += len(m.weight_mu.view(-1))
 
-            if m.bias :
-                kl = _kl_loss(m.bias_mu, m.bias_log_sigma, m.prior_mu, m.prior_log_sigma)
+            if m.bias:
+                kl = _kl_loss(
+                    m.bias_mu, m.bias_log_sigma, m.prior_mu, m.prior_log_sigma
+                )
                 kl_sum += kl
                 n += len(m.bias_mu.view(-1))
 
         if isinstance(m, BayesBatchNorm2d):
-            if m.affine :
-                kl = _kl_loss(m.weight_mu, m.weight_log_sigma, m.prior_mu, m.prior_log_sigma)
+            if m.affine:
+                kl = _kl_loss(
+                    m.weight_mu, m.weight_log_sigma, m.prior_mu, m.prior_log_sigma
+                )
                 kl_sum += kl
                 n += len(m.weight_mu.view(-1))
 
-                kl = _kl_loss(m.bias_mu, m.bias_log_sigma, m.prior_mu, m.prior_log_sigma)
-                kl_sum += kl                
+                kl = _kl_loss(
+                    m.bias_mu, m.bias_log_sigma, m.prior_mu, m.prior_log_sigma
+                )
+                kl_sum += kl
                 n += len(m.bias_mu.view(-1))
-            
-    if last_layer_only or n == 0 :
-        return kl
-    
-    if reduction == 'mean' :
-        return kl_sum/n
-    elif reduction == 'sum' :
-        return kl_sum
-    else :
-        raise ValueError(reduction + " is not valid")
-        
 
+    if last_layer_only or n == 0:
+        return kl
+
+    if reduction == "mean":
+        return kl_sum / n
+    elif reduction == "sum":
+        return kl_sum
+    else:
+        raise ValueError(reduction + " is not valid")

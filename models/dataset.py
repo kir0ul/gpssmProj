@@ -1,12 +1,27 @@
 """Classes to access data."""
+
 import torch
 from torch.utils import data
 import numpy as np
 import scipy.io as sio
 import os
-from .utils_data import get_data_split, generate_batches, generate_trajectory, Normalizer
+from .utils_data import (
+    get_data_split,
+    generate_batches,
+    generate_trajectory,
+    Normalizer,
+)
 
-__all__ = ['Actuator', 'BallBeam', 'Drive', 'Dryer',   'GasFurnace',  'KinkFunction', 'Dataset', 'get_dataset']
+__all__ = [
+    "Actuator",
+    "BallBeam",
+    "Drive",
+    "Dryer",
+    "GasFurnace",
+    "KinkFunction",
+    "Dataset",
+    "get_dataset",
+]
 
 # the file path of the datasets
 # DATA_DIR = '/home/PycharmProj/GPSSM/data/'
@@ -38,18 +53,19 @@ class Dataset(data.TensorDataset):
     dim_outputs = None  # type: int
     dim_inputs = None  # type: int
 
-    def __init__(self,
-                 outputs: np.ndarray = np.empty((1,)),
-                 inputs: np.ndarray = None,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 split_idx: int = None,
-                 normalize: bool = True,
-                 data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 if_time_step = False) -> None:
-
-        assert outputs.ndim == 3, 'Outputs shape is [n_experiment, time, dim]'
+    def __init__(
+        self,
+        outputs: np.ndarray = np.empty((1,)),
+        inputs: np.ndarray = None,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        split_idx: int = None,
+        normalize: bool = True,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        if_time_step=False,
+    ) -> None:
+        assert outputs.ndim == 3, "Outputs shape is [n_experiment, time, dim]"
         assert self.dim_outputs == outputs.shape[2]
 
         self.train = train
@@ -58,10 +74,12 @@ class Dataset(data.TensorDataset):
             sequence_length = min(20, experiment_length)
         self._sequence_length = sequence_length
         self._sequence_stride = sequence_stride
-        time_steps = np.array(range(experiment_length))[np.newaxis, :, np.newaxis] #shape [1, time, 1]'
+        time_steps = np.array(range(experiment_length))[
+            np.newaxis, :, np.newaxis
+        ]  # shape [1, time, 1]'
 
         if inputs is not None:
-            assert inputs.ndim == 3, 'Inputs shape is [n_experiment, time, dim]'
+            assert inputs.ndim == 3, "Inputs shape is [n_experiment, time, dim]"
             assert inputs.shape[0] == outputs.shape[0], """
                 Inputs and outputs must have the same number of experiments"""
             assert inputs.shape[1] == outputs.shape[1], """
@@ -99,18 +117,26 @@ class Dataset(data.TensorDataset):
 
         self.num_experiments, self.experiment_length, _ = self.outputs.shape
 
-        super().__init__(*[torch.tensor(generate_batches(x, self._sequence_length, self._sequence_stride)).float()
-                           for x in [self.inputs, self.outputs]
-                           ]
-                         )
+        super().__init__(
+            *[
+                torch.tensor(
+                    generate_batches(x, self._sequence_length, self._sequence_stride)
+                ).float()
+                for x in [self.inputs, self.outputs]
+            ]
+        )
 
     def __str__(self):
         """Return string with dataset statistics."""
-        string = 'input dim: {} \noutput dim: {} \n'.format(self.dim_inputs, self.dim_outputs)
+        string = "input dim: {} \noutput dim: {} \n".format(
+            self.dim_inputs, self.dim_outputs
+        )
 
-        string += 'sequence length: {} \n'.format(self.tensors[0].shape[1] )
-        key = 'train' if self.train else 'test'
-        string += '{}_samples: {} \n{}_sequences: {} \n'.format(key, self.experiment_length, key, self.tensors[0].shape[0])
+        string += "sequence length: {} \n".format(self.tensors[0].shape[1])
+        key = "train" if self.train else "test"
+        string += "{}_samples: {} \n{}_sequences: {} \n".format(
+            key, self.experiment_length, key, self.tensors[0].shape[0]
+        )
         return string
 
     @property
@@ -127,9 +153,12 @@ class Dataset(data.TensorDataset):
         new_seq_length: int.
         """
         self._sequence_length = new_seq_length
-        self.tensors = [torch.tensor(
-            generate_batches(x, self._sequence_length, self._sequence_stride)).float()
-                        for x in [self.inputs, self.outputs]]
+        self.tensors = [
+            torch.tensor(
+                generate_batches(x, self._sequence_length, self._sequence_stride)
+            ).float()
+            for x in [self.inputs, self.outputs]
+        ]
 
     @staticmethod
     def f(x: np.ndarray, u: np.ndarray = None) -> np.ndarray:
@@ -171,25 +200,29 @@ class Actuator(Dataset):
     dim_outputs = 1
     dim_inputs = 1
 
-    def __init__(self,
-                 data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 normalize: bool = True,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 if_time_step = False) -> None:
-        raw_data = sio.loadmat(os.path.join(data_dir, 'actuator.mat'))
+    def __init__(
+        self,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        normalize: bool = True,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        if_time_step=False,
+    ) -> None:
+        raw_data = sio.loadmat(os.path.join(data_dir, "actuator.mat"))
 
-        inputs = raw_data['u'][np.newaxis]
-        outputs = raw_data['p'][np.newaxis]
+        inputs = raw_data["u"][np.newaxis]
+        outputs = raw_data["p"][np.newaxis]
 
-        super().__init__(inputs=inputs,
-                         outputs=outputs,
-                         normalize=normalize,
-                         sequence_length=sequence_length,
-                         sequence_stride=sequence_stride,
-                         train=train,
-                         if_time_step=if_time_step)
+        super().__init__(
+            inputs=inputs,
+            outputs=outputs,
+            normalize=normalize,
+            sequence_length=sequence_length,
+            sequence_stride=sequence_stride,
+            train=train,
+            if_time_step=if_time_step,
+        )
 
 
 class BallBeam(Dataset):
@@ -222,23 +255,29 @@ class BallBeam(Dataset):
     dim_outputs = 1
     dim_inputs = 1
 
-    def __init__(self, data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 normalize: bool = True,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 if_time_step = False) -> None:
-        raw_data = np.loadtxt(os.path.join(data_dir, 'ballbeam.dat'))
+    def __init__(
+        self,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        normalize: bool = True,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        if_time_step=False,
+    ) -> None:
+        raw_data = np.loadtxt(os.path.join(data_dir, "ballbeam.dat"))
 
         inputs = raw_data[np.newaxis, :, 0, np.newaxis]
         outputs = raw_data[np.newaxis, :, 1, np.newaxis]
 
-        super().__init__(inputs=inputs, outputs=outputs,
-                         normalize=normalize,
-                         sequence_length=sequence_length,
-                         sequence_stride=sequence_stride,
-                         train=train,
-                         if_time_step=if_time_step)
+        super().__init__(
+            inputs=inputs,
+            outputs=outputs,
+            normalize=normalize,
+            sequence_length=sequence_length,
+            sequence_stride=sequence_stride,
+            train=train,
+            if_time_step=if_time_step,
+        )
 
 
 class Drive(Dataset):
@@ -270,23 +309,29 @@ class Drive(Dataset):
     dim_outputs = 1
     dim_inputs = 1
 
-    def __init__(self, data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 normalize: bool = True,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 if_time_step = False) -> None:
-        raw_data = sio.loadmat(os.path.join(data_dir, 'drive.mat'))
+    def __init__(
+        self,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        normalize: bool = True,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        if_time_step=False,
+    ) -> None:
+        raw_data = sio.loadmat(os.path.join(data_dir, "drive.mat"))
 
-        inputs = raw_data['u1'][np.newaxis]
-        outputs = raw_data['z1'][np.newaxis]
+        inputs = raw_data["u1"][np.newaxis]
+        outputs = raw_data["z1"][np.newaxis]
 
-        super().__init__(inputs=inputs, outputs=outputs,
-                         normalize=normalize,
-                         sequence_length=sequence_length,
-                         sequence_stride=sequence_stride,
-                         train=train,
-                         if_time_step=if_time_step)
+        super().__init__(
+            inputs=inputs,
+            outputs=outputs,
+            normalize=normalize,
+            sequence_length=sequence_length,
+            sequence_stride=sequence_stride,
+            train=train,
+            if_time_step=if_time_step,
+        )
 
 
 class Dryer(Dataset):
@@ -319,23 +364,29 @@ class Dryer(Dataset):
     dim_outputs = 1
     dim_inputs = 1
 
-    def __init__(self, data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 normalize: bool = True,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 if_time_step = False) -> None:
-        raw_data = np.loadtxt(os.path.join(data_dir, 'dryer.dat'))
+    def __init__(
+        self,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        normalize: bool = True,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        if_time_step=False,
+    ) -> None:
+        raw_data = np.loadtxt(os.path.join(data_dir, "dryer.dat"))
 
         inputs = raw_data[np.newaxis, :, 0, np.newaxis]
         outputs = raw_data[np.newaxis, :, 1, np.newaxis]
 
-        super().__init__(inputs=inputs, outputs=outputs,
-                         normalize=normalize,
-                         sequence_length=sequence_length,
-                         sequence_stride=sequence_stride,
-                         train=train,
-                         if_time_step=if_time_step)
+        super().__init__(
+            inputs=inputs,
+            outputs=outputs,
+            normalize=normalize,
+            sequence_length=sequence_length,
+            sequence_stride=sequence_stride,
+            train=train,
+            if_time_step=if_time_step,
+        )
 
 
 class GasFurnace(Dataset):
@@ -367,24 +418,31 @@ class GasFurnace(Dataset):
     dim_outputs = 1
     dim_inputs = 1
 
-    def __init__(self, data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 normalize: bool = True,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 if_time_step = False) -> None:
-        raw_data = np.loadtxt(os.path.join(data_dir, 'gas_furnace.csv'),
-                              skiprows=1, delimiter=',')
+    def __init__(
+        self,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        normalize: bool = True,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        if_time_step=False,
+    ) -> None:
+        raw_data = np.loadtxt(
+            os.path.join(data_dir, "gas_furnace.csv"), skiprows=1, delimiter=","
+        )
 
         inputs = raw_data[np.newaxis, :, 0, np.newaxis]
         outputs = raw_data[np.newaxis, :, 1, np.newaxis]
 
-        super().__init__(inputs=inputs, outputs=outputs,
-                         normalize=normalize,
-                         sequence_length=sequence_length,
-                         sequence_stride=sequence_stride,
-                         train=train,
-                         if_time_step=if_time_step)
+        super().__init__(
+            inputs=inputs,
+            outputs=outputs,
+            normalize=normalize,
+            sequence_length=sequence_length,
+            sequence_stride=sequence_stride,
+            train=train,
+            if_time_step=if_time_step,
+        )
 
 
 class KinkFunction(Dataset):
@@ -434,60 +492,68 @@ class KinkFunction(Dataset):
     dim_outputs = 1
     dim_inputs = 0
 
-    def __init__(self,
-                 data_dir: str = DATA_DIR,
-                 train: bool = True,
-                 normalize: bool = False,
-                 sequence_length: int = None,
-                 sequence_stride: int = 1,
-                 trajectory_length: int = 600,
-                 x0: float = 0.5,
-                 process_noise_sd: float = 0.05,
-                 observation_noise_sd: float = 0.2) -> None:
-
-        file_name = os.path.join(data_dir, 'kink_function.mat')
+    def __init__(
+        self,
+        data_dir: str = DATA_DIR,
+        train: bool = True,
+        normalize: bool = False,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        trajectory_length: int = 600,
+        x0: float = 0.5,
+        process_noise_sd: float = 0.05,
+        observation_noise_sd: float = 0.2,
+    ) -> None:
+        file_name = os.path.join(data_dir, "kink_function.mat")
         if not os.path.exists(file_name):
             states, outputs = generate_trajectory(
-                self.f, self.g, trajectory_length=trajectory_length, x0=np.array([x0]),
+                self.f,
+                self.g,
+                trajectory_length=trajectory_length,
+                x0=np.array([x0]),
                 process_noise_sd=np.array([process_noise_sd]),
-                observation_noise_sd=np.array([observation_noise_sd]))
+                observation_noise_sd=np.array([observation_noise_sd]),
+            )
 
-            sio.savemat(file_name, {
-                'ds_x': states,
-                'ds_y': outputs,
-                'title': 'Kink Function'
-            })
+            sio.savemat(
+                file_name, {"ds_x": states, "ds_y": outputs, "title": "Kink Function"}
+            )
             # states = states[np.newaxis]
             outputs = outputs[np.newaxis]
 
         else:
             raw_data = sio.loadmat(file_name)
             # states = raw_data['ds_x'][np.newaxis]
-            outputs = raw_data['ds_y'][np.newaxis]
+            outputs = raw_data["ds_y"][np.newaxis]
 
-        super().__init__(outputs=outputs, normalize=normalize,
-                         sequence_length=sequence_length, split_idx=500,
-                         sequence_stride=sequence_stride, train=train)
+        super().__init__(
+            outputs=outputs,
+            normalize=normalize,
+            sequence_length=sequence_length,
+            split_idx=500,
+            sequence_stride=sequence_stride,
+            train=train,
+        )
 
     @staticmethod
     def f(x: np.ndarray, _: np.ndarray = None) -> np.ndarray:
         """Kink transition function."""
-        return 0.8 + (x + 0.2) * (1 - 5 / (1 + np.exp(- 2 * x)))
+        return 0.8 + (x + 0.2) * (1 - 5 / (1 + np.exp(-2 * x)))
 
 
 def get_dataset(dataset_: str):
     """Get Dataset."""
-    if dataset_.lower() == 'actuator':
+    if dataset_.lower() == "actuator":
         return Actuator
-    elif dataset_.lower() == 'ballbeam':
+    elif dataset_.lower() == "ballbeam":
         return BallBeam
-    elif dataset_.lower() == 'drive':
+    elif dataset_.lower() == "drive":
         return Drive
-    elif dataset_.lower() == 'dryer':
+    elif dataset_.lower() == "dryer":
         return Dryer
-    elif dataset_.lower() == 'gasfurnace':
+    elif dataset_.lower() == "gasfurnace":
         return GasFurnace
-    elif dataset_.lower() == 'kinkfunction':
+    elif dataset_.lower() == "kinkfunction":
         return KinkFunction
     else:
         raise NotImplementedError("{}".format(dataset_))

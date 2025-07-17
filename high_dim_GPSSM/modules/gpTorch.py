@@ -3,6 +3,7 @@ import numpy as np
 from scipy.special import roots_hermite
 import gpytorch
 from torch.distributions import MultivariateNormal
+
 dtype = torch.float32
 
 # Get the Hermite roots and weights using SciPy
@@ -22,13 +23,17 @@ class GPModel(torch.nn.Module):
     def __init__(self, likelihood_log_variance=0.0):
         super(GPModel, self).__init__()
         self.kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-        self.likelihood_log_variance = torch.nn.Parameter(torch.tensor(likelihood_log_variance))
+        self.likelihood_log_variance = torch.nn.Parameter(
+            torch.tensor(likelihood_log_variance)
+        )
 
     def forward(self, train_x, train_y, test_x):
         # Compute the kernel matrix for training data
         K = self.kernel(train_x, train_x).evaluate()
         likelihood_variance = torch.exp(self.likelihood_log_variance)
-        K += likelihood_variance * torch.eye(len(train_x))  # Add noise term to the diagonal
+        K += likelihood_variance * torch.eye(
+            len(train_x)
+        )  # Add noise term to the diagonal
 
         # Cholesky decomposition
         L = torch.cholesky(K)
@@ -64,7 +69,11 @@ class GPModel(torch.nn.Module):
         K += likelihood_variance * torch.eye(len(train_x))
         L = torch.cholesky(K)
         alpha = torch.cholesky_solve(train_y.unsqueeze(1), L)
-        nll = 0.5 * train_y.unsqueeze(1).t().matmul(alpha).sum() + torch.log(L.diag()).sum() + 0.5 * len(train_x) * np.log(2 * np.pi)
+        nll = (
+            0.5 * train_y.unsqueeze(1).t().matmul(alpha).sum()
+            + torch.log(L.diag()).sum()
+            + 0.5 * len(train_x) * np.log(2 * np.pi)
+        )
         return nll
 
 
@@ -97,13 +106,15 @@ def expected_log_likelihood(y, m, S, sigma_sq):
     diff = y - m
 
     # (y - m)^T (y - m)
-    term1 = diff ** 2
+    term1 = diff**2
 
     # Tr(S)
     term2 = S.diag()
 
     # Log-likelihood expectation
-    expected_log_likelihood = -0.5 * (term1 + term2) / sigma_sq - 0.5 * torch.log(2 * np.pi * sigma_sq)
+    expected_log_likelihood = -0.5 * (term1 + term2) / sigma_sq - 0.5 * torch.log(
+        2 * np.pi * sigma_sq
+    )
 
     return expected_log_likelihood.sum().div(n)
 
@@ -112,25 +123,33 @@ class SparseGPModel(torch.nn.Module):
     def __init__(self, inducing_points, likelihood_log_variance=0.0):
         super(SparseGPModel, self).__init__()
         self.kernel = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-        self.likelihood_log_variance = torch.nn.Parameter(torch.tensor(likelihood_log_variance))
+        self.likelihood_log_variance = torch.nn.Parameter(
+            torch.tensor(likelihood_log_variance)
+        )
 
         self.num_inducing = inducing_points.size(0)
         self.inducing_points = torch.nn.Parameter(inducing_points)
 
-        self.q_mu = torch.nn.Parameter(torch.zeros(inducing_points.size(0), 1))  # Whitened mean of the variational distribution
-        self.q_log_var = torch.nn.Parameter(torch.eye(inducing_points.size(0)))  # Log-variance/covariance of the whitened variational distribution
+        self.q_mu = torch.nn.Parameter(
+            torch.zeros(inducing_points.size(0), 1)
+        )  # Whitened mean of the variational distribution
+        self.q_log_var = torch.nn.Parameter(
+            torch.eye(inducing_points.size(0))
+        )  # Log-variance/covariance of the whitened variational distribution
 
     def predict(self, input):
         """
-            Compute the predictive mean and variance of the model for any inputs (i.e., q(f) = N(pred_mean, pred_Cov))
-            :param input: A tensor of shape (n, d) representing the inputs
+        Compute the predictive mean and variance of the model for any inputs (i.e., q(f) = N(pred_mean, pred_Cov))
+        :param input: A tensor of shape (n, d) representing the inputs
         """
         if len(input.shape) == 1:
             input = input.unsqueeze(-1)
 
         # Compute the kernel matrices
         K_ff = self.kernel(input, input).evaluate()
-        K_uu = self.kernel(self.inducing_points, self.inducing_points).evaluate() + 1e-6 * torch.eye(self.inducing_points.size(0))
+        K_uu = self.kernel(
+            self.inducing_points, self.inducing_points
+        ).evaluate() + 1e-6 * torch.eye(self.inducing_points.size(0))
         K_uf = self.kernel(self.inducing_points, input).evaluate()
 
         # Compute the Cholesky decomposition of K_uu, size: m x m
@@ -140,7 +159,7 @@ class SparseGPModel(torch.nn.Module):
         Lambda, _ = torch.triangular_solve(input=K_uf, A=L_uu, upper=False)
 
         # Compute the predictive mean (self.q_mu is whitened variational mean, which is: inv(L_uu) * mu (unwhitened))
-        pred_mean = Lambda.t() @ self.q_mu   # K_fu * inv(L_uu) * inv(L_uu) * mu
+        pred_mean = Lambda.t() @ self.q_mu  # K_fu * inv(L_uu) * inv(L_uu) * mu
 
         # Compute the whitened variational distribution
         q_sqrt = torch.tril(torch.exp(0.5 * self.q_log_var))
@@ -164,14 +183,18 @@ class SparseGPModel(torch.nn.Module):
 
         # Compute expected log likelihood term
         likelihood_variance = torch.exp(self.likelihood_log_variance)
-        log_likelihood = expected_log_likelihood(train_y, pred_mean.squeeze(), pred_cov, likelihood_variance)
+        log_likelihood = expected_log_likelihood(
+            train_y, pred_mean.squeeze(), pred_cov, likelihood_variance
+        )
 
         # Compute the whitened variational covariance matrix
         q_sqrt = torch.tril(torch.exp(0.5 * self.q_log_var))
         q_cov = q_sqrt.matmul(q_sqrt.t()) + 1e-6 * torch.eye(q_sqrt.size(0))
 
         # KL divergence term between q(u) and p(u)
-        p_u = MultivariateNormal(torch.zeros(self.num_inducing), torch.eye(self.num_inducing))
+        p_u = MultivariateNormal(
+            torch.zeros(self.num_inducing), torch.eye(self.num_inducing)
+        )
         q_u = MultivariateNormal(self.q_mu.squeeze(), q_cov)
         KL = torch.distributions.kl.kl_divergence(q_u, p_u).div(train_x.size(0))
 

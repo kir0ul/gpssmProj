@@ -1,10 +1,12 @@
 """
 This file is to test the performance of the sparse GP model on a simple non-stationary regression task.
 """
+
 import torch
 import gpytorch
 import torch.optim as optim
 import matplotlib.pyplot as plt
+
 # import sys
 # directory_to_add = "/home/student2/zhidi/gpbl/PycharmProj/ETGPSSM/high_dim_GPSSM"
 # if directory_to_add not in sys.path:
@@ -12,6 +14,7 @@ import matplotlib.pyplot as plt
 #     sys.path.append(directory_to_add)
 from high_dim_GPSSM.modules.gpModel import SparseGPModel
 from high_dim_GPSSM.utils_h import reset_seed
+
 reset_seed(0)
 torch.set_default_dtype(torch.double)
 
@@ -27,7 +30,9 @@ def train_svgp(model, X_train, y_train, num_epochs=1000, lr=1e-3):
         optimizer.step()
 
         if epoch % 10 == 0:
-            print(f'Epoch {epoch}, ELBO: {-loss.item():.4f}, KL: {kl_divergence.item():.5f}')
+            print(
+                f"Epoch {epoch}, ELBO: {-loss.item():.4f}, KL: {kl_divergence.item():.5f}"
+            )
 
 
 def predict_svgp(model, X_star):
@@ -45,8 +50,8 @@ class NonStationaryRBFKernel(gpytorch.kernels.Kernel):
 
     def forward(self, x1, x2, **params):
         # Calculate distance factor with a gentler modulation
-        distance_factor_x1 = torch.exp(-0.5 * (x1 ** 2).sum(dim=-1).sqrt())
-        distance_factor_x2 = torch.exp(-0.5 * (x2 ** 2).sum(dim=-1).sqrt())
+        distance_factor_x1 = torch.exp(-0.5 * (x1**2).sum(dim=-1).sqrt())
+        distance_factor_x2 = torch.exp(-0.5 * (x2**2).sum(dim=-1).sqrt())
 
         # Compute the base RBF kernel
         base_covariance = self.base_kernel(x1, x2)
@@ -113,7 +118,7 @@ X_f = torch.linspace(-6, 2, 100)
 X_train = torch.linspace(-6, 2, 10)
 # Compute original kink function and non-stationary kink function
 f = nonstationary_kink_func_with_jitter(X_train)
-y_train = f + .2 * torch.randn_like(X_train)
+y_train = f + 0.2 * torch.randn_like(X_train)
 
 inducing_points = torch.randn(20)
 model = SparseGPModel(inducing_points=inducing_points)
@@ -127,12 +132,21 @@ X_test = torch.linspace(-6, 6, 200)
 mean, var = predict_svgp(model, X_test)
 
 plt.figure(figsize=(10, 5))
-plt.plot(X_f.numpy(), nonstationary_kink_func_with_jitter(X_f).numpy(), 'r', label='True function')
-plt.plot(X_train.numpy(), y_train.numpy(), 'kx', label='Training Data')
-plt.plot(X_test.numpy(), mean.numpy(), 'b', label='Stationary GP Mean')
-plt.fill_between(X_test.numpy(),
-                 (mean - 2 * torch.sqrt(var)).numpy(),
-                 (mean + 2 * torch.sqrt(var)).numpy(),
-                 color='blue', alpha=0.2, label='95% UI')
+plt.plot(
+    X_f.numpy(),
+    nonstationary_kink_func_with_jitter(X_f).numpy(),
+    "r",
+    label="True function",
+)
+plt.plot(X_train.numpy(), y_train.numpy(), "kx", label="Training Data")
+plt.plot(X_test.numpy(), mean.numpy(), "b", label="Stationary GP Mean")
+plt.fill_between(
+    X_test.numpy(),
+    (mean - 2 * torch.sqrt(var)).numpy(),
+    (mean + 2 * torch.sqrt(var)).numpy(),
+    color="blue",
+    alpha=0.2,
+    label="95% UI",
+)
 plt.legend()
 plt.show()

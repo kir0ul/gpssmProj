@@ -3,6 +3,7 @@ import torch
 import math
 import random
 
+
 def reset_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
@@ -14,7 +15,7 @@ def reset_seed(seed: int) -> None:
 
 ## Config Variables
 # torch_version = '1.8.1'
-device='cuda:0'
+device = "cuda:0"
 # device = 'cpu'
 dtype = torch.float
 torch.set_default_dtype(dtype)
@@ -24,21 +25,26 @@ reset_seed(seed=0)
 pi = torch.tensor(math.pi).to(device)
 
 ## Computation constants
-quad_points     = 100    # number of quadrature points used in integrations
-constant_jitter = None   # if provided, then this jitter value is added always when computing cholesky factors
-global_jitter   = None   # if None, then it uses 1e-8 with float 64 and 1-6 with float 32 precission when a cholesky error occurs
+quad_points = 100  # number of quadrature points used in integrations
+constant_jitter = None  # if provided, then this jitter value is added always when computing cholesky factors
+global_jitter = None  # if None, then it uses 1e-8 with float 64 and 1-6 with float 32 precission when a cholesky error occurs
 
 
 # some function for saving results
 def save_best_model(model, optimizer, epoch, result_dir, data_name, jj):
-    state = {'model': model.state_dict(),
-             'optimizer': optimizer.state_dict(),
-             'epoch': epoch}
+    state = {
+        "model": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "epoch": epoch,
+    }
     log_dir = result_dir + f"{data_name}_best_model_Repeat{jj}.pt"
     torch.save(state, log_dir)
 
-def save_models(model, optimizer, epoch, losses, result_dir, data_name, jj, save_model=True):
-    '''
+
+def save_models(
+    model, optimizer, epoch, losses, result_dir, data_name, jj, save_model=True
+):
+    """
 
     Parameters
     ----------
@@ -54,18 +60,19 @@ def save_models(model, optimizer, epoch, losses, result_dir, data_name, jj, save
     Returns
     -------
 
-    '''
-    state = {'model': model.state_dict(),
-             'optimizer': optimizer.state_dict(),
-             'epoch': epoch,
-             'losses': losses}
+    """
+    state = {
+        "model": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "epoch": epoch,
+        "losses": losses,
+    }
     if save_model:
         log_dir = result_dir + f"{data_name}_epoch{epoch}_Repeat{jj}.pt"
         torch.save(state, log_dir)
 
+
 def save_results(RMSE, log_ll, result_dir, jj):
-    state = {'RMSE': RMSE,
-            'log_ll': log_ll
-            }
+    state = {"RMSE": RMSE, "log_ll": log_ll}
     log_dir = result_dir + f"results_repeat{jj}.pt"
     torch.save(state, log_dir)

@@ -3,6 +3,7 @@ import numpy as np
 from high_dim_GPSSM.modules.gpTorch import GPModel
 from matplotlib import pyplot as plt
 from high_dim_GPSSM.utils_h import reset_seed
+
 reset_seed(0)
 
 # Generate training data
@@ -45,12 +46,16 @@ pred_var_np = pred_var.detach().numpy()
 
 # Plotting
 plt.figure(figsize=(10, 6))
-plt.plot(train_x_np, train_y_np, 'k*', label='Training data')
-plt.plot(test_x_np, pred_mean_np, 'b', label='Mean prediction')
-plt.fill_between(test_x_np,
-                 pred_mean_np - 2 * np.sqrt(pred_var_np),
-                 pred_mean_np + 2 * np.sqrt(pred_var_np),
-                 color='blue', alpha=0.2, label='95% confidence interval')
+plt.plot(train_x_np, train_y_np, "k*", label="Training data")
+plt.plot(test_x_np, pred_mean_np, "b", label="Mean prediction")
+plt.fill_between(
+    test_x_np,
+    pred_mean_np - 2 * np.sqrt(pred_var_np),
+    pred_mean_np + 2 * np.sqrt(pred_var_np),
+    color="blue",
+    alpha=0.2,
+    label="95% confidence interval",
+)
 plt.legend()
-plt.title('Gaussian Process Regression')
+plt.title("Gaussian Process Regression")
 plt.show()

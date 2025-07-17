@@ -1,10 +1,19 @@
 """Python Script Template."""
+
 import torch
 import numpy as np
 from typing import Callable, Tuple
 
-__all__ = ['safe_softplus', 'inverse_softplus', 'KL_divergence',
-           'get_data_split', 'generate_trajectory', 'generate_batches', 'Normalizer']
+__all__ = [
+    "safe_softplus",
+    "inverse_softplus",
+    "KL_divergence",
+    "get_data_split",
+    "generate_trajectory",
+    "generate_batches",
+    "Normalizer",
+]
+
 
 def safe_softplus(x: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     """
@@ -38,7 +47,8 @@ def inverse_softplus(x: torch.Tensor) -> torch.Tensor:
     output: torch.Tensor.
         Transformed tensor.
     """
-    return torch.log(torch.exp(x) - 1.)
+    return torch.log(torch.exp(x) - 1.0)
+
 
 def KL_divergence(P, Q):
     """
@@ -52,10 +62,9 @@ def KL_divergence(P, Q):
     return res
 
 
-def get_data_split(array: np.ndarray,
-                   split_idx: int = None,
-                   train: bool = True
-                   ) -> np.ndarray:
+def get_data_split(
+    array: np.ndarray, split_idx: int = None, train: bool = True
+) -> np.ndarray:
     """Get data split by index.
 
     Parameters
@@ -79,14 +88,14 @@ def get_data_split(array: np.ndarray,
     assert array.ndim == 3, "array must have shape [n_experiment, time, dim]"
 
     if split_idx is None:
-        split_idx = array.shape[1] // 2    # // 取整除赋值运算符
+        split_idx = array.shape[1] // 2  # // 取整除赋值运算符
 
     if train:
         if array.shape[0] > split_idx:  # Experiment split.
             array = array[:split_idx, :, :]
         else:  # Trajectory split.
             array = array[:, :split_idx, :]
-    else: # test
+    else:  # test
         if array.shape[0] > split_idx:
             array = array[split_idx:, :, :]
         else:
@@ -95,8 +104,9 @@ def get_data_split(array: np.ndarray,
     return array
 
 
-def generate_batches(array: np.ndarray, sequence_length: int, stride_length: int
-                     ) -> np.ndarray:
+def generate_batches(
+    array: np.ndarray, sequence_length: int, stride_length: int
+) -> np.ndarray:
     """Generate batches from an array.
 
     An array has size [n_experiment, time, dim] and it returns an array of size
@@ -141,7 +151,7 @@ def generate_batches(array: np.ndarray, sequence_length: int, stride_length: int
     sequences = []
     for exp_array in array:  # Each exp_array is [time, dim].
         for time in range(0, trajectory_length - sequence_length + 1, stride_length):
-            sequences.append(exp_array[time:time + sequence_length, :])
+            sequences.append(exp_array[time : time + sequence_length, :])
 
         if (trajectory_length - sequence_length) % stride_length > 0:
             sequences.append(exp_array[-sequence_length:, :])
@@ -149,14 +159,15 @@ def generate_batches(array: np.ndarray, sequence_length: int, stride_length: int
     return np.stack(sequences, axis=0)
 
 
-def generate_trajectory(transition_function: Callable,
-                        observation_function: Callable,
-                        inputs: np.ndarray = None,
-                        trajectory_length: int = 120,
-                        x0: np.ndarray = np.array(0.5),
-                        process_noise_sd: np.ndarray = np.array(0.05),
-                        observation_noise_sd: np.ndarray = np.array(np.sqrt(0.8))
-                        ) -> Tuple[np.ndarray, np.ndarray]:
+def generate_trajectory(
+    transition_function: Callable,
+    observation_function: Callable,
+    inputs: np.ndarray = None,
+    trajectory_length: int = 120,
+    x0: np.ndarray = np.array(0.5),
+    process_noise_sd: np.ndarray = np.array(0.05),
+    observation_noise_sd: np.ndarray = np.array(np.sqrt(0.8)),
+) -> Tuple[np.ndarray, np.ndarray]:
     """Generate a trajectory.
 
     The trajectory is generated as:
@@ -243,7 +254,7 @@ class Normalizer(object):
             self.mean = np.zeros((dim,))
             self.sd = np.ones((dim,))
 
-        if np.all(self.sd == 0.):  # This is for constant sequences.
+        if np.all(self.sd == 0.0):  # This is for constant sequences.
             self.sd = np.ones((dim,))
 
         assert self.mean.shape == (dim,)
@@ -256,4 +267,3 @@ class Normalizer(object):
     def inverse(self, data: np.ndarray) -> np.ndarray:
         """Inverse transformation."""
         return self.mean + data * self.sd
-

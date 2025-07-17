@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def ensemble_kalman_filter(y_obs, particles, A, noise_cov, n_samples, bias=0.0):
     """
     Perform Ensemble Kalman Filter (EnKF) for posterior sampling.
@@ -27,14 +28,22 @@ def ensemble_kalman_filter(y_obs, particles, A, noise_cov, n_samples, bias=0.0):
 
     # Step 3: Compute innovation covariance and Kalman gain
     S = H @ ensemble_cov @ H.T + noise_cov  # Innovation covariance # (n_obs x n_obs)
-    K = ensemble_cov @ H.T @ np.linalg.inv(S)  # Kalman gain (using pseudo-inverse for stability) # (n_dim x n_obs)
+    K = (
+        ensemble_cov @ H.T @ np.linalg.inv(S)
+    )  # Kalman gain (using pseudo-inverse for stability) # (n_dim x n_obs)
 
     # Step 4: Generate observation perturbations
-    obs_perturbations = np.random.multivariate_normal(np.zeros_like(y_obs), noise_cov, n_samples).T
+    obs_perturbations = np.random.multivariate_normal(
+        np.zeros_like(y_obs), noise_cov, n_samples
+    ).T
 
     # Step 5: Update ensemble
-    y_ensemble = H @ particles.T + bias - obs_perturbations  # Perturbed observations (n_obs x n_samples)
-    posterior_particles = particles.T + K @ (y_obs.reshape(-1, 1) - y_ensemble)  # Update particles (n_dim x n_samples)
+    y_ensemble = (
+        H @ particles.T + bias - obs_perturbations
+    )  # Perturbed observations (n_obs x n_samples)
+    posterior_particles = particles.T + K @ (
+        y_obs.reshape(-1, 1) - y_ensemble
+    )  # Update particles (n_dim x n_samples)
     posterior_particles = posterior_particles.T  # Transpose back to (n_samples x n_dim)
 
     return posterior_particles
