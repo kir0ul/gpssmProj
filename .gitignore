@@ -1,3 +1,4 @@
+slurm-logs/
 .direnv/
 .DS_Store
 .idea

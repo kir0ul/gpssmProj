@@ -1,0 +1,21 @@
+[project]
+name = "GPSSM"
+version = "0.0.1"
+
+dependencies = [
+    "torch", # -i https://download.pytorch.org/whl/cu118",
+    "numpy",
+    "matplotlib",
+    "ipdb",
+    "ruff",
+    "tqdm",
+    "gpytorch",
+    "ruff",
+]
+
+[tool.setuptools]
+packages = ["Datasets", "models", "EnVI"]
+
+[tool.hatch.envs.default.env-vars]
+PIP_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cu118"
+
