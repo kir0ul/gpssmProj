@@ -211,16 +211,17 @@ for ii in range(len(data_name_all)):
 
                 y_test_true = Y_test_original.reshape(test_len, )
                 y_predict = y_pred_mean.reshape(test_len, )
-
-                f, ax = plt.subplots(1, 1)
-                plt.plot(range(test_len), y_test_true.cpu().numpy(), 'k-', label='true observations')
-                plt.plot(range(test_len), y_predict.cpu().numpy(), 'b-', label='predicted observations')
-                # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')
-                ax.legend(loc=0)  # , fontsize=28)
-                plt.title(f'RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}')
-                plt.savefig(result_dir + f"prediction_performance_iter{jj}_epoch{epoch}.pdf")
-                plt.show()
-                plt.close()
+                with plt.style.context("ggplot"):
+                    f, ax = plt.subplots(1, 1)
+                    plt.plot(range(test_len), y_test_true.cpu().numpy(), 'k-', label='true observations')
+                    plt.plot(range(test_len), y_predict.cpu().numpy(), 'b-', label='predicted observations')
+                    # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')
+                    ax.legend(loc=0)  # , fontsize=28)
+                    plt.title(f'Training - RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}')
+                    plt.savefig(result_dir + f"prediction_performance_iter{jj}_epoch{epoch}.pdf")
+                    plt.savefig(result_dir + f"prediction_performance_iter{jj}_epoch{epoch}.png")
+                    # plt.show()
+                    plt.close()
 
         end_time = time.time()
         Time = start_time - end_time
@@ -262,15 +263,17 @@ for ii in range(len(data_name_all)):
         y_test_true = Y_test_original.reshape(test_len, )
         y_predict = y_pred_mean.reshape(test_len, )
 
-        f, ax = plt.subplots(1, 1)
-        plt.plot(range(test_len), y_test_true.cpu().numpy(), 'k-', label='true observations')
-        plt.plot(range(test_len), y_predict.cpu().numpy(), 'b-', label='predicted observations')
-        # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')
-        ax.legend(loc=0)  # , fontsize=28)
-        plt.title(f'RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}')
-        plt.savefig(result_dir + f"prediction_performance_iter{jj}.pdf")
-        plt.show()
-        plt.close()
+        with plt.style.context("ggplot"):
+            f, ax = plt.subplots(1, 1)
+            plt.plot(range(test_len), y_test_true.cpu().numpy(), 'k-', label='true observations')
+            plt.plot(range(test_len), y_predict.cpu().numpy(), 'b-', label='predicted observations')
+            # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')
+            ax.legend(loc=0)  # , fontsize=28)
+            plt.title(f'Eval - RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}')
+            plt.savefig(result_dir + f"prediction_performance_iter{jj}.pdf")
+            plt.savefig(result_dir + f"prediction_performance_iter{jj}.png")
+            # plt.show()
+            plt.close()
 
     cg.save_results(RMSE_ALL, LOG_LL_ALL, result_dir, '_all')
 
