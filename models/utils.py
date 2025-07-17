@@ -15,8 +15,9 @@ def reset_seed(seed: int) -> None:
 
 ## Config Variables
 # torch_version = '1.8.1'
-device='cuda:0'
+# device='cuda:0'
 # device = 'cpu'
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 torch.set_default_dtype(dtype)
 reset_seed(seed=0)

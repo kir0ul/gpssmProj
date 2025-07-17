@@ -9,7 +9,8 @@ from .utils_data import get_data_split, generate_batches, generate_trajectory, N
 __all__ = ['Actuator', 'BallBeam', 'Drive', 'Dryer',   'GasFurnace',  'KinkFunction', 'Dataset', 'get_dataset']
 
 # the file path of the datasets
-DATA_DIR = '/home/PycharmProj/GPSSM/data/'
+# DATA_DIR = '/home/PycharmProj/GPSSM/data/'
+DATA_DIR = "/home/kir0ul/Projects/gpssmProj/RGP/datasets/system_identification"
 
 
 class Dataset(data.TensorDataset):
