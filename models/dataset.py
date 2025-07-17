@@ -25,7 +25,7 @@ __all__ = [
 
 # the file path of the datasets
 # DATA_DIR = '/home/PycharmProj/GPSSM/data/'
-DATA_DIR = "/home/kir0ul/Projects/gpssmProj/RGP/datasets/system_identification"
+DATA_DIR = "./RGP/datasets/system_identification"
 
 
 class Dataset(data.TensorDataset):
