@@ -4,7 +4,7 @@
 #SBATCH --ntasks=8                   # Number of CPU cores
 #SBATCH --nodes=1                    # Number of nodes
 #SBATCH --mem=3gb                    # Job memory request
-#SBATCH --time=06:00:00              # Time limit hrs:min:sec
+#SBATCH --time=04:00:00              # Time limit hrs:min:sec
 #SBATCH -o slurm-logs/%j-stdout.txt
 #SBATCH -e slurm-logs/%j-stderr.txt
 #SBATCH --mail-type=begin       # send email when job begins

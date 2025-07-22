@@ -14,6 +14,7 @@ dependencies = [
     "jupyterlab",
     "h5py",
     "pandas",
+    "ipympl",
 ]
 
 [tool.setuptools]
@@ -22,3 +23,5 @@ packages = ["Datasets", "models", "EnVI"]
 [tool.hatch.envs.default.env-vars]
 PIP_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cu118"
 
+[tool.ruff]
+exclude = ["RGP/examples/"]

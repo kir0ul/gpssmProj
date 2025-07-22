@@ -305,7 +305,7 @@ for ii in range(len(data_name_all)):
                     # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')
                     ax.legend(loc=0)  # , fontsize=28)
                     plt.title(
-                        f"Training - RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}"
+                        f"Training (epoch: {jj}/{epoch})- RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}"
                     )
                     plt.savefig(
                         result_dir + f"prediction_performance_iter{jj}_epoch{epoch}.pdf"
@@ -394,8 +394,8 @@ for ii in range(len(data_name_all)):
             plt.title(
                 f"Eval - RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}"
             )
-            plt.savefig(result_dir + f"prediction_performance_iter{jj}.pdf")
-            plt.savefig(result_dir + f"prediction_performance_iter{jj}.png")
+            plt.savefig(result_dir + f"prediction_performance_iter{jj}_eval.pdf")
+            plt.savefig(result_dir + f"prediction_performance_iter{jj}_eval.png")
             # plt.show()
             plt.close()
 
