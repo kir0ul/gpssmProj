@@ -59,9 +59,9 @@ if nn_par and feedTime:
 
 
 """-------------------- dataset settings --------------------"""
-# data_name_all = [ 'actuator', 'ballbeam',  'drive',  'dryer',  'gasfurnace' ]
+data_name_all = ["actuator", "ballbeam", "drive", "dryer", "gasfurnace"]
 # data_name_all = [ 'actuator', 'ballbeam']
-data_name_all = ["drive", "dryer", "gasfurnace"]
+# data_name_all = ["drive", "dryer", "gasfurnace"]
 # data_name_all = [ 'actuator' ]
 
 for ii in range(len(data_name_all)):

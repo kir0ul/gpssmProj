@@ -11,6 +11,9 @@ dependencies = [
     "tqdm",
     "gpytorch",
     "ruff",
+    "jupyterlab",
+    "h5py",
+    "pandas",
 ]
 
 [tool.setuptools]
