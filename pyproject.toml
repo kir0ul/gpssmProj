@@ -15,10 +15,13 @@ dependencies = [
     "h5py",
     "pandas",
     "ipympl",
+    # "sktime",
+    # "numba",
+    # "scikit-learn",
 ]
 
 [tool.setuptools]
-packages = ["Datasets", "models", "EnVI"]
+packages = ["Datasets", "models", "EnVI", "PFCS"]
 
 [tool.hatch.envs.default.env-vars]
 PIP_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cu118"

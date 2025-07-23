@@ -59,10 +59,8 @@ if nn_par and feedTime:
 
 
 """-------------------- dataset settings --------------------"""
-data_name_all = ["actuator", "ballbeam", "drive", "dryer", "gasfurnace"]
-# data_name_all = [ 'actuator', 'ballbeam']
-# data_name_all = ["drive", "dryer", "gasfurnace"]
-# data_name_all = [ 'actuator' ]
+# data_name_all = ["actuator", "ballbeam", "drive", "dryer", "gasfurnace"]
+data_name_all = ["TableTask"]
 
 for ii in range(len(data_name_all)):
     """------------------------ get dataset --------------------------"""
@@ -190,7 +188,8 @@ for ii in range(len(data_name_all)):
         else:
             start_epoch = 0
             losses = []
-            print("无保存模型，将从头开始训练！")
+            # print("无保存模型，将从头开始训练！")
+            print("No saved model, training will start from scratch!")
 
         # Record the training time
         start_time = time.time()

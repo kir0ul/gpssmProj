@@ -3,14 +3,17 @@
 import torch
 from torch.utils import data
 import numpy as np
+import pandas as pd
 import scipy.io as sio
 import os
+from pathlib import Path
 from .utils_data import (
     get_data_split,
     generate_batches,
     generate_trajectory,
     Normalizer,
 )
+from PFCS.scripts.gt_plot import read_data
 
 __all__ = [
     "Actuator",
@@ -541,6 +544,141 @@ class KinkFunction(Dataset):
         return 0.8 + (x + 0.2) * (1 - 5 / (1 + np.exp(-2 * x)))
 
 
+class TableTask(Dataset):
+    """Table task dataset implementation.
+
+    Train Split: first half of the data.
+    Test Split: second half of the data.
+
+    Parameters
+    ----------
+    data_dir: str, optional (default: data/).
+        Directory where `actuator.mat' is located.
+
+    train: bool, optional (default: True).
+        Flag that indicates dataset split.
+
+    sequence_length: int, optional (default: full sequence).
+        Integer that indicates how long the sequences should be.
+
+    sequence_stride: int, optional (default: 1).
+        Integer that indicates every how many time-steps the sequences start.
+
+    References
+    ----------
+    https://doi.org/10.48550/arXiv.2505.06100
+
+    """
+
+    dim_outputs = 1
+    dim_inputs = 1
+
+    def __init__(
+        self,
+        # data_dir: str = "../PFCS/table task",
+        train: bool = True,
+        normalize: bool = True,
+        sequence_length: int = None,
+        sequence_stride: int = 1,
+        if_time_step=False,
+    ) -> None:
+        datapath_root, traj_df = get_table_task_raw_data()
+        inputs, outputs = process_table_task_data(traj_df)
+
+        super().__init__(
+            inputs=inputs,
+            outputs=outputs,
+            normalize=normalize,
+            data_dir=datapath_root,
+            sequence_length=sequence_length,
+            sequence_stride=sequence_stride,
+            train=train,
+            if_time_step=if_time_step,
+        )
+
+
+def get_table_task_raw_data():
+    task_ground_truth = [
+        {
+            "filename": "fetch_recorded_demo_1730997119",
+            "idx": {
+                "plate": {"ini": 0, "end": 1125},
+                "napkin": {"ini": 1125, "end": 2591},
+                "cup": {"ini": 2591, "end": 3986},
+                "fork": {"ini": 3986, "end": 5666},
+                "spoon": {"ini": 5666, "end": 7338},
+            },
+        },
+        {
+            "filename": "fetch_recorded_demo_1730997530",
+            "idx": {
+                "plate": {"ini": 0, "end": 1812},
+                "napkin": {"ini": 1812, "end": 3844},
+                "cup": {"ini": 3844, "end": 5732},
+                "fork": {"ini": 5732, "end": 7090},
+                "spoon": {"ini": 7090, "end": 7955},
+            },
+        },
+        {
+            "filename": "fetch_recorded_demo_1730997735",
+            "idx": {
+                "plate": {"ini": 0, "end": 1965},
+                "napkin": {"ini": 1965, "end": 4178},
+                "cup": {"ini": 4178, "end": 6427},
+                "spoon": {"ini": 6427, "end": 7904},
+                "fork": {"ini": 7904, "end": 9123},
+            },
+        },
+        {
+            "filename": "fetch_recorded_demo_1730997956",
+            "idx": {
+                "plate": {"ini": 0, "end": 1898},
+                "napkin": {"ini": 1898, "end": 4081},
+                "cup": {"ini": 4081, "end": 5442},
+                "spoon": {"ini": 5442, "end": 6829},
+                "fork": {"ini": 6829, "end": 9177},
+            },
+        },
+    ]
+
+    filenum = 0
+    datapath_root = Path("./PFCS/table task")
+    xyz_path = (
+        datapath_root
+        / "xyz data"
+        / "full_tasks"
+        / (task_ground_truth[filenum]["filename"] + ".txt")
+    )
+    h5_path = (
+        datapath_root / "h5 files" / (task_ground_truth[filenum]["filename"] + ".h5")
+    )
+
+    data = np.loadtxt(xyz_path)  # load the file into an array
+    joint_data, tf_data, gripper_data = read_data(h5_path)
+
+    time_sec = tf_data[0][:, 0]
+    time_nanosec = tf_data[0][:, 1]
+
+    timestamps = []
+    for t_idx, t_val in enumerate(time_sec):
+        timestamp = pd.Timestamp(time_sec[t_idx], unit="s", tz="EST") + pd.to_timedelta(
+            time_nanosec[t_idx], unit="ns"
+        )
+        timestamps.append(timestamp)
+    timestamps = pd.Series(timestamps)
+
+    traj_df = pd.DataFrame(
+        {"x": data[:, 0], "y": data[:, 1], "z": data[:, 2], "timestamps": timestamps}
+    )
+    return datapath_root, traj_df
+
+
+def process_table_task_data(traj_df):
+    inputs = traj_df.index.to_numpy()[np.newaxis, :, np.newaxis]
+    outputs = traj_df.x.to_numpy()[np.newaxis, :, np.newaxis]
+    return inputs, outputs
+
+
 def get_dataset(dataset_: str):
     """Get Dataset."""
     if dataset_.lower() == "actuator":
@@ -555,5 +693,7 @@ def get_dataset(dataset_: str):
         return GasFurnace
     elif dataset_.lower() == "kinkfunction":
         return KinkFunction
+    elif dataset_.lower() == "tabletask":
+        return TableTask
     else:
         raise NotImplementedError("{}".format(dataset_))
