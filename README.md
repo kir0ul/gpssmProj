@@ -35,4 +35,5 @@ This repository contains:
 }
 ```
 ## Data
-The data can be found at `https://github.com/zhenwendai/RGP/tree/master/datasets/system_identification`.
+- The original datasets can be found at `https://github.com/zhenwendai/RGP/tree/master/datasets/system_identification`.
+- The table task data can be obtained with `git clone git@github.com:PeARL-robotics/PFCS.git`
