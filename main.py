@@ -36,7 +36,7 @@ observation_noise_sd = 0.1  # initial observation noise std
 number_particles = 50  # number of trajectories to be sampled
 lr = 0.01  # learning rate  %% default 0.01
 num_epoch = 1000  # number of epoch
-num_repeat = 5  # repeat experiments
+num_repeat = 3  # repeat experiments
 save_fig = True
 save_model = True
 
@@ -60,6 +60,7 @@ if nn_par and feedTime:
 
 """-------------------- dataset settings --------------------"""
 # data_name_all = ["actuator", "ballbeam", "drive", "dryer", "gasfurnace"]
+# data_name_all = ["KinkFunction"]
 data_name_all = ["TableTask"]
 
 for ii in range(len(data_name_all)):
@@ -184,7 +185,8 @@ for ii in range(len(data_name_all)):
             optimizer.load_state_dict(checkpoint["optimizer"])
             start_epoch = checkpoint["epoch"]
             losses = checkpoint["losses"]
-            print("加载 epoch {} 成功！".format(start_epoch))
+            # print("加载 epoch {} 成功！".format(start_epoch))
+            print("Loading epoch {} succeeded!".format(start_epoch))
         else:
             start_epoch = 0
             losses = []
@@ -193,7 +195,7 @@ for ii in range(len(data_name_all)):
 
         # Record the training time
         start_time = time.time()
-        epochiter = tqdm(range(start_epoch, start_epoch + num_epoch), desc="Epoch:")
+        epochiter = tqdm(range(start_epoch, start_epoch + num_epoch), desc="Epoch")
         best_loss = torch.tensor(0.0, device=cg.device)
 
         for epoch in epochiter:
@@ -287,24 +289,25 @@ for ii in range(len(data_name_all)):
                 y_predict = y_pred_mean.reshape(
                     test_len,
                 )
-                with plt.style.context("ggplot"):
+                with plt.style.context("ggplot_perso.mplstyle"):
                     f, ax = plt.subplots(1, 1)
                     plt.plot(
                         range(test_len),
                         y_test_true.cpu().numpy(),
-                        "k-",
+                        # "k-",
                         label="true observations",
                     )
                     plt.plot(
                         range(test_len),
                         y_predict.cpu().numpy(),
-                        "b-",
+                        # "b-",
                         label="predicted observations",
                     )
                     # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')
                     ax.legend(loc=0)  # , fontsize=28)
                     plt.title(
-                        f"Training (epoch: {epoch}/{num_epoch})- RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}"
+                        f"Training (epoch: {epoch}/{num_epoch})\n"
+                        f"RMSE: {round(RMSE.item(), 3)}, log-ll: {round(log_ll.item(), 3)}"
                     )
                     plt.savefig(
                         result_dir + f"prediction_performance_iter{jj}_epoch{epoch}.pdf"
@@ -374,18 +377,18 @@ for ii in range(len(data_name_all)):
             test_len,
         )
 
-        with plt.style.context("ggplot"):
+        with plt.style.context("ggplot_perso.mplstyle"):
             f, ax = plt.subplots(1, 1)
             plt.plot(
                 range(test_len),
                 y_test_true.cpu().numpy(),
-                "k-",
+                # "k-",
                 label="true observations",
             )
             plt.plot(
                 range(test_len),
                 y_predict.cpu().numpy(),
-                "b-",
+                # "b-",
                 label="predicted observations",
             )
             # ax.fill_between(range(test_len), lower.cpu().numpy(), upper.cpu().numpy(), color="b", alpha=0.2, label='95% CI')

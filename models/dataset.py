@@ -506,6 +506,7 @@ class KinkFunction(Dataset):
         x0: float = 0.5,
         process_noise_sd: float = 0.05,
         observation_noise_sd: float = 0.2,
+        if_time_step=False,
     ) -> None:
         file_name = os.path.join(data_dir, "kink_function.mat")
         if not os.path.exists(file_name):
@@ -582,7 +583,7 @@ class TableTask(Dataset):
         sequence_stride: int = 1,
         if_time_step=False,
     ) -> None:
-        datapath_root, traj_df = get_table_task_raw_data()
+        datapath_root, traj_df = get_table_task_raw_data(sect_key="fork")
         inputs, outputs = process_table_task_data(traj_df)
 
         super().__init__(
@@ -597,7 +598,7 @@ class TableTask(Dataset):
         )
 
 
-def get_table_task_raw_data():
+def get_table_task_raw_data(sect_key="fork"):
     task_ground_truth = [
         {
             "filename": "fetch_recorded_demo_1730997119",
@@ -670,7 +671,9 @@ def get_table_task_raw_data():
     traj_df = pd.DataFrame(
         {"x": data[:, 0], "y": data[:, 1], "z": data[:, 2], "timestamps": timestamps}
     )
-    return datapath_root, traj_df
+
+    sect_dict_current = task_ground_truth[filenum]["idx"][sect_key]
+    return datapath_root, traj_df[sect_dict_current["ini"] : sect_dict_current["end"]]
 
 
 def process_table_task_data(traj_df):
