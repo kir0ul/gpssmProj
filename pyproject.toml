@@ -18,6 +18,11 @@ dependencies = [
     # "sktime",
     # "numba",
     # "scikit-learn",
+    "panel",
+    "hvplot",
+    "imageio",
+    "av",
+    "Pillow",
 ]
 
 [tool.setuptools]

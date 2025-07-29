@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+
+from pathlib import Path
+import holoviews as hv
+import hvplot.pandas
+import numpy as np
+import pandas as pd
+import panel as pn
+from PFCS.scripts.gt_plot import read_data
+import imageio.v3 as iio
+from PIL import Image
+from holoviews import opts
+
+# PRIMARY_COLOR = "#0072B5"
+# SECONDARY_COLOR = "#B54300"
+# CSV_FILE = (
+#     "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
+# )
+# hv.extension('bokeh')
+
+pn.extension(design="material", sizing_mode="stretch_width")
+
+
+# video = pn.pane.Video(
+#     "/home/kir0ul/Projects/TableTaskVideos/2.webm", width=720, loop=False
+# )
+def get_video_frame(index, video_path):
+    # read a single frame
+    try:
+        frame = iio.imread(
+            video_path,
+            index=index,
+            plugin="pyav",
+        )
+        return frame
+    except StopIteration:
+        print("Reached the end of the video file")
+        return np.asarray(Image.new("RGB", (3840, 2160), (0, 0, 0)))
+        # return np.asarray(Image.new("RGB", (720, 405), (0, 0, 0)))
+
+
+@pn.cache
+def get_table_task_data(filenum=0, sect_key="fork"):
+    task_ground_truth = [
+        {
+            "filename": "fetch_recorded_demo_1730997119",
+            "idx": {
+                "plate": {"ini": 0, "end": 1125},
+                "napkin": {"ini": 1125, "end": 2591},
+                "cup": {"ini": 2591, "end": 3986},
+                "fork": {"ini": 3986, "end": 5666},
+                "spoon": {"ini": 5666, "end": 7338},
+            },
+        },
+        {
+            "filename": "fetch_recorded_demo_1730997530",
+            "idx": {
+                "plate": {"ini": 0, "end": 1812},
+                "napkin": {"ini": 1812, "end": 3844},
+                "cup": {"ini": 3844, "end": 5732},
+                "fork": {"ini": 5732, "end": 7090},
+                "spoon": {"ini": 7090, "end": 7955},
+            },
+        },
+        {
+            "filename": "fetch_recorded_demo_1730997735",
+            "idx": {
+                "plate": {"ini": 0, "end": 1965},
+                "napkin": {"ini": 1965, "end": 4178},
+                "cup": {"ini": 4178, "end": 6427},
+                "spoon": {"ini": 6427, "end": 7904},
+                "fork": {"ini": 7904, "end": 9123},
+            },
+        },
+        {
+            "filename": "fetch_recorded_demo_1730997956",
+            "idx": {
+                "plate": {"ini": 0, "end": 1898},
+                "napkin": {"ini": 1898, "end": 4081},
+                "cup": {"ini": 4081, "end": 5442},
+                "spoon": {"ini": 5442, "end": 6829},
+                "fork": {"ini": 6829, "end": 9177},
+            },
+        },
+    ]
+
+    datapath_root = Path("./PFCS/table task")
+    xyz_path = (
+        datapath_root
+        / "xyz data"
+        / "full_tasks"
+        / (task_ground_truth[filenum]["filename"] + ".txt")
+    )
+    h5_path = (
+        datapath_root / "h5 files" / (task_ground_truth[filenum]["filename"] + ".h5")
+    )
+
+    data = np.loadtxt(xyz_path)  # load the file into an array
+    joint_data, tf_data, gripper_data = read_data(h5_path)
+
+    time_sec = tf_data[0][:, 0]
+    time_nanosec = tf_data[0][:, 1]
+
+    timestamps = []
+    for t_idx, t_val in enumerate(time_sec):
+        timestamp = pd.Timestamp(time_sec[t_idx], unit="s", tz="EST") + pd.to_timedelta(
+            time_nanosec[t_idx], unit="ns"
+        )
+        timestamps.append(timestamp)
+    timestamps = pd.Series(timestamps)
+
+    traj_df = pd.DataFrame(
+        {"x": data[:, 0], "y": data[:, 1], "z": data[:, 2], "timestamps": timestamps}
+    )
+
+    # sect_dict_current = task_ground_truth[filenum]["idx"][sect_key]
+    # return traj_df[sect_dict_current["ini"] : sect_dict_current["end"]]
+    return traj_df
+
+
+data_df = get_table_task_data(filenum=1)
+
+
+def get_line_plot(df, frame_idx):
+    # vline = hv.VLine(df.timestamps[frame_idx]).opts(
+    #     color="black", line_dash="dashed", line_width=6
+    # )
+    vline = hv.VLine(frame_idx).opts(color="black", line_dash="dashed", line_width=3)
+    # print(f"\nTimestamp slider: {df.timestamps[frame_idx]}\n")
+    # lineplot = df.hvplot(x="timestamps", y=["x", "y", "z"], height=400)
+    lineplot = df.hvplot(x="index", y=["x", "y", "z"], height=400).opts(
+        xlabel="Frame", ylabel="Position"
+    )
+    # overlay.opts(opts.VLine(color="red", line_dash='dashed', line_width=6))
+    overlay = lineplot * vline
+    return overlay
+
+
+# variable_widget = pn.widgets.Select(
+#     name="variable", value="Temperature", options=list(data.columns)
+# )
+slider_widget = pn.widgets.IntSlider(
+    name="Frame", value=int(len(data_df) / 2), start=0, end=len(data_df)
+)
+
+
+def get_frame_plot(frame_idx):
+    img = get_video_frame(
+        index=slider_widget.value,
+        video_path="/home/kir0ul/Projects/TableTaskVideos/2.webm",
+    )
+    frame_plot = pn.pane.Image(Image.fromarray(img), width=720, align="center")
+    return frame_plot
+
+
+line_plt = pn.bind(get_line_plot, df=data_df, frame_idx=slider_widget)
+img_plt = pn.bind(get_frame_plot, frame_idx=slider_widget)
+
+centered_img = pn.Row(pn.layout.HSpacer(), img_plt, pn.layout.HSpacer())
+
+
+pn.template.MaterialTemplate(
+    site="Segmentation",
+    title="Video vs. end effector position",
+    # sidebar=[slider_widget],
+    main=[centered_img, slider_widget, line_plt],
+).servable()  # The ; is needed in the notebook to not display the template. Its not needed in a script
