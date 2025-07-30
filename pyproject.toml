@@ -23,6 +23,7 @@ dependencies = [
     "imageio",
     "av",
     "Pillow",
+    "moviepy",
 ]
 
 [tool.setuptools]

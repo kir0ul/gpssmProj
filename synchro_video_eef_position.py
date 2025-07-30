@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import hvplot.pandas  # noqa: F401
 import holoviews as hv
-import hvplot.pandas
 import numpy as np
 import pandas as pd
 import panel as pn
 from PFCS.scripts.gt_plot import read_data
 import imageio.v3 as iio
 from PIL import Image
-from holoviews import opts
+from moviepy import VideoFileClip
 
 # PRIMARY_COLOR = "#0072B5"
 # SECONDARY_COLOR = "#B54300"
@@ -17,6 +17,9 @@ from holoviews import opts
 #     "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
 # )
 # hv.extension('bokeh')
+
+
+VIDEO_PATH = "/home/kir0ul/Projects/TableTaskVideos/2.webm"
 
 pn.extension(design="material", sizing_mode="stretch_width")
 
@@ -156,22 +159,30 @@ def get_line_plot(df, frame_idx):
 # variable_widget = pn.widgets.Select(
 #     name="variable", value="Temperature", options=list(data.columns)
 # )
+clip = VideoFileClip(VIDEO_PATH)
+frame_count = clip.reader.n_frames - 1
 slider_widget = pn.widgets.IntSlider(
     name="Frame", value=int(len(data_df) / 2), start=0, end=len(data_df)
 )
 
 
-def get_frame_plot(frame_idx):
+def get_frame_plot(frame_idx, frame_count, plot_pts_num):
+    idx = int(frame_count * frame_idx / plot_pts_num)
     img = get_video_frame(
-        index=slider_widget.value,
-        video_path="/home/kir0ul/Projects/TableTaskVideos/2.webm",
+        index=idx,
+        video_path=VIDEO_PATH,
     )
     frame_plot = pn.pane.Image(Image.fromarray(img), width=720, align="center")
     return frame_plot
 
 
 line_plt = pn.bind(get_line_plot, df=data_df, frame_idx=slider_widget)
-img_plt = pn.bind(get_frame_plot, frame_idx=slider_widget)
+img_plt = pn.bind(
+    get_frame_plot,
+    frame_idx=slider_widget,
+    frame_count=frame_count,
+    plot_pts_num=len(data_df),
+)
 
 centered_img = pn.Row(pn.layout.HSpacer(), img_plt, pn.layout.HSpacer())
 
