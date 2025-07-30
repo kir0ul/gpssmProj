@@ -115,10 +115,10 @@ def get_table_task_data(filenum=0, sect_key="fork"):
 
     # sect_dict_current = task_ground_truth[filenum]["idx"][sect_key]
     # return traj_df[sect_dict_current["ini"] : sect_dict_current["end"]]
-    return traj_df
+    return traj_df, task_ground_truth[filenum]
 
 
-data_df = get_table_task_data(filenum=1)
+data_df, file_ground_truth = get_table_task_data(filenum=1)
 
 
 def get_line_plot(df, frame_idx):
@@ -133,7 +133,24 @@ def get_line_plot(df, frame_idx):
     )
     # overlay.opts(opts.VLine(color="red", line_dash='dashed', line_width=6))
     overlay = lineplot * vline
-    return overlay
+
+    fill_min = np.min([df.x.min(), df.y.min(), df.z.min()])
+    fill_max = np.max([df.x.max(), df.y.max(), df.z.max()])
+    for sect_i, sect_key in enumerate(file_ground_truth["idx"].keys()):
+        sect_dict_current = file_ground_truth["idx"][sect_key]
+        xs = df.index[sect_dict_current["ini"] : sect_dict_current["end"]]
+        spread = hv.Spread(
+            (
+                xs,
+                fill_max - fill_min,
+                fill_min - 2,
+                fill_max + 2,
+            ),
+            label=sect_key,
+            # vdims=["y", "yerrneg", "yerrpos"],
+        ).opts(fill_alpha=0.15)
+        overlay = overlay * spread
+    return overlay.opts(ylim=(fill_min - 0.1, fill_max + 0.1))
 
 
 # variable_widget = pn.widgets.Select(
