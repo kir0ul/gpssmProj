@@ -165,7 +165,7 @@ def get_line_plot(df, frame_idx, skill_choice=None):
     # print(f"\nTimestamp slider: {df.timestamps[frame_idx]}\n")
     # lineplot = df.hvplot(x="timestamps", y=["x", "y", "z"], height=400)
     lineplot = df.hvplot(x="index", y=["x", "y", "z"], height=400).opts(
-        xlabel="Frame", ylabel="Position"
+        xlabel="Index", ylabel="Position"
     )
     # overlay.opts(opts.VLine(color="red", line_dash='dashed', line_width=6))
     overlay = lineplot * vline
@@ -209,7 +209,7 @@ skill_choice_widget = pn.widgets.Select(name="Skill", value="", options=SKILL_CH
 clip = VideoFileClip(VIDEO_PATH)
 frame_count = clip.reader.n_frames - 1
 slider_widget = pn.widgets.IntSlider(
-    name="Frame", value=int(len(data_df) / 2), start=0, end=len(data_df)
+    name="Index", value=int(len(data_df) / 2), start=0, end=len(data_df)
 )
 
 
