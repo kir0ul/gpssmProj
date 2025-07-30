@@ -16,6 +16,7 @@ from .utils_data import (
 from PFCS.scripts.gt_plot import read_data
 
 __all__ = [
+    "TableTask",
     "Actuator",
     "BallBeam",
     "Drive",

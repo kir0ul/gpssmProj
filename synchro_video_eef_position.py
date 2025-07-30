@@ -20,8 +20,41 @@ from moviepy import VideoFileClip
 
 
 VIDEO_PATH = "/home/kir0ul/Projects/TableTaskVideos/2.webm"
+FILENUM = 1
+SKILL_CHOICE = ["", "Reaching", "Placing"]
 
 pn.extension(design="material", sizing_mode="stretch_width")
+
+
+@pn.cache
+def get_skill_data(filenum, skill):
+    skill_data = [
+        {
+            SKILL_CHOICE[1]: [
+                {"ini": 133, "end": 1242},
+            ],
+            SKILL_CHOICE[2]: [
+                {"ini": 1403, "end": 1602},
+            ],
+        },
+        {
+            SKILL_CHOICE[1]: [
+                {"ini": 133, "end": 1242},
+                {"ini": 1694, "end": 3239},
+                {"ini": 3802, "end": 5138},
+                {"ini": 5737, "end": 6158},
+                {"ini": 7067, "end": 7478},
+            ],
+            SKILL_CHOICE[2]: [
+                {"ini": 1403, "end": 1602},
+                {"ini": 3383, "end": 3680},
+                {"ini": 5246, "end": 5595},
+                {"ini": 6517, "end": 6899},
+                {"ini": 7573, "end": 7850},
+            ],
+        },
+    ]
+    return skill_data[filenum][skill]
 
 
 # video = pn.pane.Video(
@@ -43,7 +76,7 @@ def get_video_frame(index, video_path):
 
 
 @pn.cache
-def get_table_task_data(filenum=0, sect_key="fork"):
+def get_table_task_data(filenum, sect_key="fork"):
     task_ground_truth = [
         {
             "filename": "fetch_recorded_demo_1730997119",
@@ -121,10 +154,10 @@ def get_table_task_data(filenum=0, sect_key="fork"):
     return traj_df, task_ground_truth[filenum]
 
 
-data_df, file_ground_truth = get_table_task_data(filenum=1)
+data_df, file_ground_truth = get_table_task_data(filenum=FILENUM)
 
 
-def get_line_plot(df, frame_idx):
+def get_line_plot(df, frame_idx, skill_choice=None):
     # vline = hv.VLine(df.timestamps[frame_idx]).opts(
     #     color="black", line_dash="dashed", line_width=6
     # )
@@ -136,29 +169,43 @@ def get_line_plot(df, frame_idx):
     )
     # overlay.opts(opts.VLine(color="red", line_dash='dashed', line_width=6))
     overlay = lineplot * vline
-
     fill_min = np.min([df.x.min(), df.y.min(), df.z.min()])
     fill_max = np.max([df.x.max(), df.y.max(), df.z.max()])
-    for sect_i, sect_key in enumerate(file_ground_truth["idx"].keys()):
-        sect_dict_current = file_ground_truth["idx"][sect_key]
-        xs = df.index[sect_dict_current["ini"] : sect_dict_current["end"]]
-        spread = hv.Spread(
-            (
-                xs,
-                fill_max - fill_min,
-                fill_min - 2,
-                fill_max + 2,
-            ),
-            label=sect_key,
-            # vdims=["y", "yerrneg", "yerrpos"],
-        ).opts(fill_alpha=0.15)
-        overlay = overlay * spread
+
+    if skill_choice != "":
+        skill_data = get_skill_data(filenum=FILENUM, skill=skill_choice)
+        for sect_i, sect_val in enumerate(skill_data):
+            xs = df.index[sect_val["ini"] : sect_val["end"]]
+            spread = hv.Spread(
+                (
+                    xs,
+                    fill_max - fill_min,
+                    fill_min - 2,
+                    fill_max + 2,
+                ),
+                # label=sect_key,
+            ).opts(fill_alpha=0.15, color="gray")
+            overlay = overlay * spread
+
+    else:
+        for sect_i, sect_key in enumerate(file_ground_truth["idx"].keys()):
+            sect_dict_current = file_ground_truth["idx"][sect_key]
+            xs = df.index[sect_dict_current["ini"] : sect_dict_current["end"]]
+            spread = hv.Spread(
+                (
+                    xs,
+                    fill_max - fill_min,
+                    fill_min - 2,
+                    fill_max + 2,
+                ),
+                label=sect_key,
+                # vdims=["y", "yerrneg", "yerrpos"],
+            ).opts(fill_alpha=0.15)
+            overlay = overlay * spread
     return overlay.opts(ylim=(fill_min - 0.1, fill_max + 0.1))
 
 
-# variable_widget = pn.widgets.Select(
-#     name="variable", value="Temperature", options=list(data.columns)
-# )
+skill_choice_widget = pn.widgets.Select(name="Skill", value="", options=SKILL_CHOICE)
 clip = VideoFileClip(VIDEO_PATH)
 frame_count = clip.reader.n_frames - 1
 slider_widget = pn.widgets.IntSlider(
@@ -176,7 +223,9 @@ def get_frame_plot(frame_idx, frame_count, plot_pts_num):
     return frame_plot
 
 
-line_plt = pn.bind(get_line_plot, df=data_df, frame_idx=slider_widget)
+line_plt = pn.bind(
+    get_line_plot, df=data_df, frame_idx=slider_widget, skill_choice=skill_choice_widget
+)
 img_plt = pn.bind(
     get_frame_plot,
     frame_idx=slider_widget,
@@ -190,6 +239,6 @@ centered_img = pn.Row(pn.layout.HSpacer(), img_plt, pn.layout.HSpacer())
 pn.template.MaterialTemplate(
     site="Segmentation",
     title="Video vs. end effector position",
-    # sidebar=[slider_widget],
+    sidebar=[skill_choice_widget],
     main=[centered_img, slider_widget, line_plt],
 ).servable()  # The ; is needed in the notebook to not display the template. Its not needed in a script
